@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="fa-solid fa-wrench text-orange"></i> Панель механика</h2>
+
+{% if appointments %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="text-muted small text-uppercase">
+      <tr>
+        <th>Дата / Время</th>
+        <th>Клиент</th>
+        <th>Комментарий</th>
+        <th>Статус</th>
+        <th>Действие</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for a in appointments %}
+      <tr>
+        <td>{{ a.date.strftime('%d.%m.%Y') }} в {{ a.time }}</td>
+        <td>{{ a.client.fio }}<br><small>{{ a.client.phone }}</small></td>
+        <td class="small text-muted">{{ a.comment or '-' }}</td>
+        <td>
+          {% if a.status == 'confirmed' %}<span class="badge bg-primary">Подтвержден</span>
+          {% elif a.status == 'in_progress' %}<span class="badge bg-info text-dark">В работе</span>
+          {% elif a.status == 'waiting_parts' %}<span class="badge bg-danger">Ждем запчасти</span>
+          {% elif a.status == 'done' %}<span class="badge bg-success">Выполнен</span>
+          {% else %}<span class="badge bg-secondary">Новый</span>{% endif %}
+        </td>
+        <td>
+          <a class="btn btn-sm btn-outline-orange" href="{{ url_for('admin_parts', user_id=a.client.id) }}">Открыть замены</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-secondary">У вас пока нет назначенных задач.</div>
+{% endif %}
+{% endblock %}
