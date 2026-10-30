@@ -48,9 +48,16 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
     
+    # Создаем главного админа
     if not User.query.filter_by(phone='admin').first():
         admin = User(fio='Администратор', phone='admin', password_hash=generate_password_hash(os.environ.get('ADMIN_PASSWORD', 'admin123')), role='admin')
         db.session.add(admin)
+        db.session.commit()
+
+    # Создаем тестового механика (логин: mech, пароль: mech123)
+    if not User.query.filter_by(phone='mech').first():
+        mech = User(fio='Механик Иван', phone='mech', password_hash=generate_password_hash('mech123'), role='mechanic')
+        db.session.add(mech)
         db.session.commit()
 
     if not Setting.query.first():
@@ -171,6 +178,8 @@ def login():
         user = User.query.filter_by(phone=request.form['phone'].strip()).first()
         if user and check_password_hash(user.password_hash, request.form['password']):
             login_user(user)
+            if user.role == 'admin': return redirect(url_for('admin_dashboard'))
+            if user.role == 'mechanic': return redirect(url_for('mechanic_dashboard'))
             return redirect(url_for('dashboard'))
         flash('Неверный номер или пароль')
     return render_template('login.html')
@@ -186,6 +195,9 @@ def logout():
 def dashboard():
     if current_user.role == 'admin':
         return redirect(url_for('admin_dashboard'))
+    if current_user.role == 'mechanic':
+        return redirect(url_for('mechanic_dashboard'))
+        
     upcoming = Appointment.query.filter_by(user_id=current_user.id).filter(Appointment.date >= date.today()).order_by(Appointment.date).all()
     cars = Car.query.filter_by(user_id=current_user.id).all()
     brands = Brand.query.order_by(Brand.name).all()
@@ -266,6 +278,29 @@ def cancel_appointment(appt_id):
         flash('Запись отменена')
     return redirect(url_for('dashboard'))
 
+@app.route('/export_my_report')
+@login_required
+def export_my_report():
+    if current_user.role != 'client':
+        return redirect(url_for('dashboard'))
+    
+    parts = Part.query.filter_by(user_id=current_user.id).all()
+    
+    def generate():
+        data = StringIO()
+        writer = csv.writer(data, delimiter=';')
+        writer.writerow(['Машина', 'Деталь', 'Пробег', 'Дата', 'Цена запчасти', 'Цена работы', 'Следующая замена'])
+        yield data.getvalue()
+        data.seek(0); data.truncate(0)
+        for p in parts:
+            writer.writerow([f"{p.car.brand} {p.car.model}", p.name, p.last_mileage, p.last_date, p.price_part, p.price_work, p.next_due_date()])
+            yield data.getvalue()
+            data.seek(0); data.truncate(0)
+            
+    response = Response(generate(), mimetype='text/csv')
+    response.headers.set("Content-Disposition", "attachment", filename="my_report.csv")
+    return response
+
 # --- АДМИНКА ---
 @app.route('/admin')
 @login_required
@@ -281,8 +316,9 @@ def admin_dashboard():
     db.session.commit()
 
     clients = User.query.filter_by(role='client').all()
+    mechanics = User.query.filter_by(role='mechanic').all()
     appointments = Appointment.query.filter(Appointment.date >= date.today()).order_by(Appointment.date.asc(), Appointment.time.asc()).all()
-    return render_template('dashboard_admin.html', clients=clients, appointments=appointments)
+    return render_template('dashboard_admin.html', clients=clients, appointments=appointments, mechanics=mechanics)
 
 @app.route('/admin/appointment/<int:appt_id>/status/<string:new_status>')
 @login_required
@@ -293,6 +329,19 @@ def change_appointment_status(appt_id, new_status):
     if appt and new_status in ['confirmed', 'in_progress', 'waiting_parts', 'done', 'canceled']:
         appt.status = new_status
         db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/assign_mechanic/<int:appt_id>/<int:mech_id>', methods=['POST'])
+@login_required
+def assign_mechanic(appt_id, mech_id):
+    if current_user.role != 'admin':
+        return redirect(url_for('dashboard'))
+    appt = db.session.get(Appointment, appt_id)
+    if appt:
+        appt.mechanic_id = mech_id
+        appt.status = 'in_progress'
+        db.session.commit()
+        flash('Механик назначен')
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/clients')
@@ -397,7 +446,7 @@ def delete_model(model_id):
 @app.route('/admin/parts/<int:user_id>')
 @login_required
 def admin_parts(user_id):
-    if current_user.role != 'admin':
+    if current_user.role not in ['admin', 'mechanic']:
         return redirect(url_for('dashboard'))
     client = db.session.get(User, user_id)
     if not client:
@@ -408,7 +457,7 @@ def admin_parts(user_id):
 @app.route('/admin/add_part/<int:user_id>', methods=['POST'])
 @login_required
 def add_part(user_id):
-    if current_user.role != 'admin':
+    if current_user.role not in ['admin', 'mechanic']:
         return redirect(url_for('dashboard'))
     part = Part(
         user_id=user_id, car_id=int(request.form['car_id']), name=request.form['name'],
@@ -426,7 +475,7 @@ def add_part(user_id):
 @app.route('/admin/delete_part/<int:part_id>', methods=['POST'])
 @login_required
 def delete_part(part_id):
-    if current_user.role != 'admin':
+    if current_user.role not in ['admin', 'mechanic']:
         return redirect(url_for('dashboard'))
     part = db.session.get(Part, part_id)
     if part:
@@ -475,10 +524,22 @@ def admin_settings():
 @app.route('/admin/print_order/<int:user_id>')
 @login_required
 def print_order(user_id):
-    if current_user.role != 'admin':
+    if current_user.role not in ['admin', 'mechanic']:
         return redirect(url_for('dashboard'))
     client = db.session.get(User, user_id)
     return render_template('print_order.html', client=client, date=date.today().strftime('%d.%m.%Y'))
+
+# --- МЕХАНИК ---
+@app.route('/mechanic')
+@login_required
+def mechanic_dashboard():
+    if current_user.role not in ['mechanic', 'admin']:
+        return redirect(url_for('dashboard'))
+    if current_user.role == 'admin':
+        appointments = Appointment.query.order_by(Appointment.date.asc()).all()
+    else:
+        appointments = Appointment.query.filter_by(mechanic_id=current_user.id).order_by(Appointment.date.asc()).all()
+    return render_template('mechanic_dashboard.html', appointments=appointments)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
