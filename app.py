@@ -17,23 +17,22 @@ from models import db, User, Appointment, Part, Car, Component, Brand, Model, Se
 app = Flask(__name__, template_folder='views')
 app.config.from_prefixed_env()
 
-# Обработка секретного ключа (для Render)
 if not app.config.get('SECRET_KEY'):
-    app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'default-secret-key-for-local')
-    if app.config['SECRET_KEY'] == 'default-secret-key-for-local':
-        print("ВНИМАНИЕ: FLASK_SECRET_KEY не задан в переменных окружения!")
+    raise RuntimeError("Переменная окружения FLASK_SECRET_KEY не задана.")
 
-# Настройка подключения к базе данных (SQLite локально, Postgres на Render)
+# --- УМНАЯ НАСТРОЙКА БАЗЫ ДАННЫХ (ДЛЯ RENDER И SUPABASE) ---
 db_url = os.environ.get('DATABASE_URL', 'sqlite:///service66.db')
+db_url = db_url.strip() # Убираем невидимые пробелы
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# НАСТРОЙКА ДЛЯ СТАБИЛЬНОСТИ БАЗЫ НА RENDER (исправляет ошибку 500)
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,
-    'pool_recycle': 300,
+    'pool_pre_ping': True, # Проверка соединения перед запросом (спасает от обрывов на Render)
+    'pool_recycle': 300
 }
 
 db.init_app(app)
@@ -49,19 +48,15 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
     
-    # Создаем админа, если его нет
     if not User.query.filter_by(phone='admin').first():
-        admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
-        admin = User(fio='Администратор', phone='admin', password_hash=generate_password_hash(admin_pass), role='admin')
+        admin = User(fio='Администратор', phone='admin', password_hash=generate_password_hash(os.environ.get('ADMIN_PASSWORD', 'admin123')), role='admin')
         db.session.add(admin)
         db.session.commit()
 
-    # Создаем настройки почты по умолчанию
     if not Setting.query.first():
         db.session.add(Setting(smtp_user="твоя_почта@gmail.com", smtp_password="пароль_приложения"))
         db.session.commit()
 
-    # Справочник деталей
     if not Component.query.first():
         comps = [("Моторное масло", 10000), ("Масляный фильтр", 10000), ("Воздушный фильтр", 20000), 
                  ("Салонный фильтр", 20000), ("Топливный фильтр", 40000), ("Свечи зажигания", 30000), 
@@ -73,7 +68,6 @@ with app.app_context():
             db.session.add(Component(name=name, interval=interval))
         db.session.commit()
 
-    # Справочник марок
     if not Brand.query.first():
         base_cars = {
             "Audi": ["A3", "A4", "A6", "Q5", "Q7"], "BMW": ["3 Series", "5 Series", "X3", "X5", "X6"],
@@ -90,7 +84,7 @@ with app.app_context():
                 db.session.add(Model(brand_id=b.id, name=m_name))
         db.session.commit()
 
-# --- ФУНКЦИЯ ОТПРАВКИ EMAIL ---
+# --- ОТПРАВКА EMAIL ---
 def send_email(to_email, subject, body_text):
     if not to_email:
         return
@@ -114,7 +108,7 @@ def send_email(to_email, subject, body_text):
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        print(f"[EMAIL] Успешно отправлено на {to_email}")
+        print(f"[EMAIL] Отправлено на {to_email}")
     except Exception as e:
         print(f"Ошибка Email: {e}")
 
@@ -487,6 +481,8 @@ def print_order(user_id):
     client = db.session.get(User, user_id)
     return render_template('print_order.html', client=client, date=date.today().strftime('%d.%m.%Y'))
 
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
