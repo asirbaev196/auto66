@@ -736,4 +736,3 @@ def print_order(user_id):
 if __name__ == '__main__':
     # debug управляется через env (по умолчанию False — безопаснее)
     app.run(host='0.0.0.0', port=5000, debug=os.environ.get('FLASK_DEBUG', '0') == '1')
-    
