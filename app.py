@@ -17,14 +17,24 @@ from models import db, User, Appointment, Part, Car, Component, Brand, Model, Se
 app = Flask(__name__, template_folder='views')
 app.config.from_prefixed_env()
 
+# Обработка секретного ключа (для Render)
 if not app.config.get('SECRET_KEY'):
-    raise RuntimeError("Переменная окружения FLASK_SECRET_KEY не задана.")
+    app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'default-secret-key-for-local')
+    if app.config['SECRET_KEY'] == 'default-secret-key-for-local':
+        print("ВНИМАНИЕ: FLASK_SECRET_KEY не задан в переменных окружения!")
 
+# Настройка подключения к базе данных (SQLite локально, Postgres на Render)
 db_url = os.environ.get('DATABASE_URL', 'sqlite:///service66.db')
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# НАСТРОЙКА ДЛЯ СТАБИЛЬНОСТИ БАЗЫ НА RENDER (исправляет ошибку 500)
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+}
 
 db.init_app(app)
 login_manager = LoginManager()
@@ -39,9 +49,10 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
     
-    # Создаем админа
+    # Создаем админа, если его нет
     if not User.query.filter_by(phone='admin').first():
-        admin = User(fio='Администратор', phone='admin', password_hash=generate_password_hash(os.environ.get('ADMIN_PASSWORD', 'admin123')), role='admin')
+        admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin123')
+        admin = User(fio='Администратор', phone='admin', password_hash=generate_password_hash(admin_pass), role='admin')
         db.session.add(admin)
         db.session.commit()
 
@@ -90,7 +101,7 @@ def send_email(to_email, subject, body_text):
         smtp_pass = settings.smtp_password if settings else None
 
     if not smtp_user or not smtp_pass or smtp_user == "твоя_почта@gmail.com":
-        print(f"[ТЕСТ EMAIL] Письмо для {to_email}: {subject} | {body_text}")
+        print(f"[ТЕСТ EMAIL] Письмо для {to_email}: {subject}")
         return
 
     try:
@@ -110,7 +121,6 @@ def send_email(to_email, subject, body_text):
 # --- ФОНОВЫЕ ЗАДАЧИ ---
 def check_reminders():
     with app.app_context():
-        # Проверка замен (просрочены)
         for part in Part.query.all():
             if part.is_overdue():
                 user = part.client
@@ -119,7 +129,6 @@ def check_reminders():
                 if user.email:
                     send_email(user.email, "Авто66: Пора на сервис!", text)
         
-        # Проверка записей на завтра
         tomorrow = date.today() + timedelta(days=1)
         for appt in Appointment.query.filter_by(date=tomorrow, status='confirmed').all():
             user = appt.client
@@ -479,4 +488,5 @@ def print_order(user_id):
     return render_template('print_order.html', client=client, date=date.today().strftime('%d.%m.%Y'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
