@@ -5,10 +5,15 @@ from datetime import date, datetime
 db = SQLAlchemy()
 
 class User(UserMixin, db.Model):
-    # ... остальные поля ...
-    cars = db.relationship('Car', backref='owner', lazy=True, cascade="all, delete-orphan")
+    id = db.Column(db.Integer, primary_key=True)  # <-- Вот эта строка, скорее всего, потерялась
+    fio = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(20), default='client') 
+    email = db.Column(db.String(120)) 
+    admin_note = db.Column(db.String(255))
     
-    # ЯВНО УКАЗЫВАЕМ, ЧТО СВЯЗЬ ИДЕТ ЧЕРЕЗ user_id (КЛИЕНТА), А НЕ ЧЕРЕЗ mechanic_id
+    cars = db.relationship('Car', backref='owner', lazy=True, cascade="all, delete-orphan")
     appointments = db.relationship('Appointment', foreign_keys='Appointment.user_id', backref='client', lazy=True, cascade="all, delete-orphan")
 
 class Car(db.Model):
@@ -25,11 +30,9 @@ class Appointment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     time = db.Column(db.String(5), nullable=False)
-    comment = db.Column(db.String(500)) # Увеличили до 500
+    comment = db.Column(db.String(500)) 
     status = db.Column(db.String(20), default='new') 
     created_at = db.Column(db.DateTime, default=datetime.now) 
-    
-    # Привязка к механику (кто выполняет работу)
     mechanic_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
 class Component(db.Model):
