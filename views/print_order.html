@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Заказ-наряд: {{ client.fio }}</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; color: #000; background: #fff; }
+    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+    .title { font-size: 24px; font-weight: bold; text-transform: uppercase; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+    th { background-color: #eee; }
+    .footer { display: flex; justify-content: space-between; margin-top: 50px; }
+    .signature { border-bottom: 1px solid #000; width: 200px; display: inline-block; }
+  </style>
+</head>
+<body onload="window.print()">
+  <div class="header">
+    <div class="title">Авто66 | Заказ-наряд</div>
+    <div>Дата: {{ date }}</div>
+  </div>
+  <div>
+    <p><b>Клиент:</b> {{ client.fio }}</p>
+    <p><b>Телефон:</b> {{ client.phone }}</p>
+  </div>
+  {% for car in client.cars %}
+  <h3 style="margin-top: 20px;">Автомобиль: {{ car.brand }} {{ car.model }} ({{ car.plate }})</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Компонент</th>
+        <th>Пробег</th>
+        <th>Дата замены</th>
+        <th>Следующая замена</th>
+        <th>Стоимость (₽)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in car.parts %}
+      <tr>
+        <td>{{ p.name }}</td>
+        <td>{{ p.last_mileage }} км</td>
+        <td>{{ p.last_date.strftime('%d.%m.%Y') }}</td>
+        <td>{{ p.next_due_km() }} км / {{ p.next_due_date().strftime('%d.%m.%Y') }}</td>
+        <td>{{ p.price_part + p.price_work }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endfor %}
+  <div class="footer">
+    <div>Мастер: <span class="signature"></span></div>
+    <div>Клиент: <span class="signature"></span></div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="fa-solid fa-right-to-bracket text-orange"></i> Вход в систему</h2>
+<form method="post" class="row g-3" style="max-width:400px">
+  <div class="col-12">
+    <label class="form-label text-muted small mb-0">Номер телефона</label>
+    <input name="phone" class="form-control" placeholder="+7 999 000-00-00" required>
+  </div>
+  <div class="col-12">
+    <label class="form-label text-muted small mb-0">Пароль</label>
+    <input name="password" type="password" class="form-control" placeholder="Ваш пароль" required>
+  </div>
+  <div class="col-12 mt-4">
+    <button class="btn btn-orange px-4 w-100">Войти</button>
+  </div>
+</form>
+<p class="text-muted mt-3 small text-center">Нет аккаунта? <a href="{{ url_for('register') }}" class="text-orange">Зарегистрируйтесь</a></p>
+{% endblock %}

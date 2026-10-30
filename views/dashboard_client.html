@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="fa-solid fa-warehouse text-orange"></i> Мой гараж</h2>
+
+<div class="card card-custom mb-4">
+  <div class="card-header card-header-custom"><i class="fa-solid fa-envelope text-orange"></i> Уведомления</div>
+  <div class="card-body">
+    {% if current_user.email %}
+      <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+        <div><i class="fa-solid fa-circle-check text-success"></i> E-mail: <b>{{ current_user.email }}</b></div>
+        <form method="post" action="{{ url_for('link_email') }}" class="m-0"><input type="hidden" name="email" value=""><button class="btn btn-sm btn-outline-danger">Отвязать</button></form>
+      </div>
+    {% else %}
+      <form method="post" action="{{ url_for('link_email') }}" class="row g-2 align-items-center">
+        <div class="col-12 col-md-8"><input type="email" name="email" class="form-control" placeholder="Ваш E-mail" required></div>
+        <div class="col-12 col-md-4"><button class="btn btn-orange w-100">Привязать</button></div>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card card-custom mb-4">
+  <div class="card-header card-header-custom"><i class="fa-regular fa-calendar-check"></i> Мои записи</div>
+  <div class="card-body">
+    <a class="btn btn-orange mb-3" href="{{ url_for('booking') }}"><i class="fa-solid fa-plus"></i> Записаться</a>
+    {% if upcoming %}
+    <ul class="list-group">
+      {% for a in upcoming %}
+        <li class="list-group-item d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+          <div>
+            <span><i class="fa-regular fa-clock text-orange me-2"></i> {{ a.date }} в {{ a.time }}</span>
+            {% if a.status == 'new' %}<span class="badge bg-warning text-dark ms-2">Ожидает</span>
+            {% elif a.status == 'confirmed' %}<span class="badge bg-primary ms-2">Подтверждено</span>
+            {% elif a.status == 'in_progress' %}<span class="badge bg-info text-dark ms-2">В работе</span>
+            {% elif a.status == 'waiting_parts' %}<span class="badge bg-danger ms-2">Ждем запчасти</span>
+            {% elif a.status == 'done' %}<span class="badge bg-success ms-2">Готово</span>
+            {% else %}<span class="badge bg-secondary ms-2">Отменено</span>{% endif %}
+          </div>
+          <form method="post" action="{{ url_for('cancel_appointment', appt_id=a.id) }}" onsubmit="return confirm('Отменить?');" class="m-0"><button class="btn btn-sm btn-outline-danger">Отменить</button></form>
+        </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="text-muted mb-0">Записей нет.</p>{% endif %}
+  </div>
+</div>
+
+{% for car in cars %}
+<div class="card card-custom mb-4">
+  <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+    <div><i class="fa-solid fa-car car-icon"></i> <span class="text-body">{{ car.brand }} {{ car.model }}</span></div>
+    <div>
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#editCar{{ car.id }}"><i class="fa-solid fa-pen"></i></button>
+      <form method="post" action="{{ url_for('delete_car', car_id=car.id) }}" class="d-inline" onsubmit="return confirm('Удалить машину?');">
+        <button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button>
+      </form>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="collapse mb-3" id="editCar{{ car.id }}">
+      <form method="post" action="{{ url_for('edit_car', car_id=car.id) }}" class="row g-2 bg-body p-3 rounded border border-secondary">
+        <div class="col-md-3"><input name="car_brand" class="form-control form-control-sm" value="{{ car.brand }}" required></div>
+        <div class="col-md-3"><input name="car_model" class="form-control form-control-sm" value="{{ car.model }}" required></div>
+        <div class="col-md-3"><input name="vin" class="form-control form-control-sm" value="{{ car.vin }}"></div>
+        <div class="col-md-3"><input name="plate" class="form-control form-control-sm" value="{{ car.plate }}"></div>
+        <div class="col-12 mt-2"><button class="btn btn-sm btn-orange">Сохранить</button></div>
+      </form>
+    </div>
+
+    {% if car.parts %}
+      <div class="table-responsive">
+        <table class="table table-sm table-borderless align-middle mb-0 text-nowrap">
+          <thead class="text-muted small text-uppercase">
+            <tr><th>Компонент</th><th>Пробег (дата)</th><th>Следующая (км)</th><th>Следующая (дата)</th><th>Осталось</th></tr>
+          </thead>
+          <tbody>
+          {% for p in car.parts %}
+            <tr>
+              <td>{{ p.name }}</td>
+              <td>{{ p.last_mileage }} км ({{ p.last_date.strftime('%d.%m.%Y') }})</td>
+              <td>{{ p.next_due_km() }} км</td>
+              <td class="fw-bold">{{ p.next_due_date().strftime('%d.%m.%Y') }}</td>
+              <td>
+                {% if p.days_until_due() < 0 %}
+                  <span class="badge bg-danger">Просрочено ({{ p.days_until_due()|abs }} дн.)</span>
+                {% elif p.days_until_due() <= 30 %}
+                  <span class="badge bg-warning text-dark">Через {{ p.days_until_due() }} дн.</span>
+                {% else %}
+                  <span class="badge bg-success">Через {{ p.days_until_due() }} дн.</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}<p class="text-muted mb-0">Замен нет.</p>{% endif %}
+  </div>
+</div>
+{% else %}<div class="alert alert-secondary text-center">Машин нет.</div>{% endfor %}
+
+<div class="card card-custom mt-5">
+  <div class="card-header card-header-custom">Добавить машину</div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('add_car') }}" class="row g-3">
+      <div class="col-12 col-md-3">
+        <select name="car_brand" id="brandAdd" class="form-select" required onchange="updateModels()">
+          <option value="" disabled selected>Марка...</option>
+          {% for b in brands %}<option value="{{ b.name }}">{{ b.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <select name="car_model" id="modelAdd" class="form-select" required>
+          <option value="" disabled selected>Модель...</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-3"><input name="vin" class="form-control" placeholder="VIN"></div>
+      <div class="col-12 col-md-3"><input name="plate" class="form-control" placeholder="Госномер"></div>
+      <div class="col-12 mt-3"><button class="btn btn-orange w-100 w-md-auto"><i class="fa-solid fa-plus"></i> Добавить</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const dbModels = { {% for b in brands %}"{{ b.name }}": [{% for m in b.models %}"{{ m.name }}",{% endfor %}],{% endfor %} };
+  function updateModels() {
+    const modelSelect = document.getElementById('modelAdd');
+    const selectedBrand = document.getElementById('brandAdd').value;
+    modelSelect.innerHTML = '<option value="" disabled selected>Модель...</option>';
+    if (dbModels[selectedBrand]) {
+      dbModels[selectedBrand].forEach(m => {
+        let opt = document.createElement('option');
+        opt.value = m; opt.textContent = m;
+        modelSelect.appendChild(opt);
+      });
+    }
+  }
+</script>
+{% endblock %}

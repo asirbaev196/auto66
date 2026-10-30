@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="mb-0"><i class="fa-solid fa-users text-orange"></i> Клиентская база</h2>
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left"></i> На главную</a>
+</div>
+
+<div class="card card-custom mb-4">
+  <div class="card-body">
+    <form method="get" action="{{ url_for('admin_clients') }}" class="row g-2 align-items-center">
+      <div class="col-md-9">
+        <input type="text" name="q" class="form-control" placeholder="Поиск по ФИО или телефону..." value="{{ search_q }}">
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-orange w-100"><i class="fa-solid fa-magnifying-glass"></i> Найти</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card card-custom">
+  <div class="card-header card-header-custom">Всего клиентов: {{ clients|length }}</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 text-nowrap">
+        <thead class="text-muted small text-uppercase">
+          <tr><th class="ps-3">ID</th><th>ФИО</th><th>Телефон</th><th>E-mail</th><th>Машины</th><th class="text-end pe-3">Действия</th></tr>
+        </thead>
+        <tbody>
+        {% for c in clients %}
+          <tr>
+            <td class="ps-3 text-muted">#{{ c.id }}</td>
+            <td class="fw-bold">{{ c.fio }}</td>
+            <td><i class="fa-solid fa-phone text-muted me-1"></i> {{ c.phone }}</td>
+            <td>{% if c.email %}<span class="text-success"><i class="fa-solid fa-envelope"></i> {{ c.email }}</span>{% else %}<span class="text-muted small">не привязан</span>{% endif %}</td>
+            <td><span class="badge bg-secondary">{{ c.cars|length }} шт.</span></td>
+            <td class="text-end pe-3">
+              <a class="btn btn-sm btn-outline-orange" href="{{ url_for('admin_parts', user_id=c.id) }}">Замены <i class="fa-solid fa-screwdriver-wrench ms-1"></i></a>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="text-center text-muted py-4">Клиентов не найдено.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

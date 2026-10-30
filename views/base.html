@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Авто66 | Сервис</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: var(--bs-body-bg); color: var(--bs-body-color); font-family: 'Segoe UI', sans-serif; }
+    .navbar-custom { background-color: var(--bs-tertiary-bg); border-bottom: 3px solid #ff6600; }
+    .navbar-brand { color: #ff6600 !important; font-weight: 900; font-size: 1.5rem; }
+    .text-orange { color: #ff6600 !important; }
+    .btn-orange { background-color: #ff6600; color: #fff !important; font-weight: bold; border: none; }
+    .btn-orange:hover { background-color: #e65c00; }
+    .btn-outline-orange { color: #ff6600; border-color: #ff6600; }
+    .btn-outline-orange:hover { background-color: #ff6600; color: #fff; }
+    .card-custom { background-color: var(--bs-secondary-bg); border: 1px solid var(--bs-border-color); border-radius: 10px; }
+    .card-header-custom { background-color: var(--bs-tertiary-bg); border-bottom: 1px solid var(--bs-border-color); color: #ff6600; font-weight: bold; }
+    .form-control, .form-select, input, select, textarea { background-color: var(--bs-body-bg) !important; color: var(--bs-body-color) !important; border: 1px solid var(--bs-border-color) !important; }
+    .form-control:focus, .form-select:focus { border-color: #ff6600 !important; box-shadow: 0 0 0 0.25rem rgba(255, 102, 0, 0.25) !important; }
+    .table { --bs-table-bg: transparent; --bs-table-color: var(--bs-body-color); margin-bottom: 0; }
+    .table th { color: #ff6600 !important; border-bottom: 2px solid var(--bs-border-color); }
+    .list-group-item { background-color: var(--bs-secondary-bg) !important; color: var(--bs-body-color) !important; border-color: var(--bs-border-color) !important; }
+    .car-icon { color: #ff6600; font-size: 1.5rem; margin-right: 10px; }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-custom mb-4">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url_for('index') }}"><i class="fa-solid fa-wrench me-2"></i>АВТО66</a>
+    <div class="ms-auto d-flex align-items-center">
+      <!-- Кнопка переключения темы -->
+      <button class="btn btn-sm btn-outline-secondary me-3" id="theme-toggle" title="Сменить тему">
+        <i class="fa-solid fa-moon" id="theme-icon"></i>
+      </button>
+
+      {% if current_user.is_authenticated %}
+        <span class="me-3 text-body"><i class="fa-solid fa-user text-orange"></i> {{ current_user.fio }} <span class="badge bg-secondary ms-1">{{ current_user.role }}</span></span>
+        <a class="btn btn-outline-orange btn-sm" href="{{ url_for('logout') }}">Выйти <i class="fa-solid fa-right-from-bracket"></i></a>
+      {% else %}
+        <a class="btn btn-outline-orange btn-sm me-2" href="{{ url_for('login') }}">Вход</a>
+        <a class="btn btn-orange btn-sm" href="{{ url_for('register') }}">Регистрация</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+<div class="container pb-5">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}
+        <div class="alert alert-warning alert-dismissible fade show">{{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Скрипт для смены темы
+  const html = document.documentElement;
+  const toggleBtn = document.getElementById('theme-toggle');
+  const icon = document.getElementById('theme-icon');
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  html.setAttribute('data-bs-theme', savedTheme);
+  icon.className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+
+  toggleBtn.addEventListener('click', () => {
+    const current = html.getAttribute('data-bs-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-bs-theme', next);
+    localStorage.setItem('theme', next);
+    icon.className = next === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  });
+</script>
+</body>
+</html>

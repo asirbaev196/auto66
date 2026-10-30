@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="fa-solid fa-user-shield text-orange"></i> Панель администратора</h2>
+</div>
+
+<div class="mb-4 d-flex gap-2 flex-wrap">
+  <a href="{{ url_for('admin_clients') }}" class="btn btn-orange"><i class="fa-solid fa-users"></i> Все клиенты</a>
+  <a href="{{ url_for('finances') }}" class="btn btn-success"><i class="fa-solid fa-chart-line"></i> Финансы</a>
+  <a href="{{ url_for('admin_cars') }}" class="btn btn-outline-orange"><i class="fa-solid fa-car"></i> Марки и модели</a>
+  <a href="{{ url_for('admin_components') }}" class="btn btn-outline-orange"><i class="fa-solid fa-list"></i> Справочник деталей</a>
+  <a href="{{ url_for('export_clients') }}" class="btn btn-outline-secondary"><i class="fa-solid fa-file-excel"></i> База (CSV)</a>
+</div>
+
+<h4 class="mt-4">Ближайшие записи</h4>
+{% if appointments %}
+<div class="table-responsive mb-4">
+  <table class="table table-sm align-middle">
+    <thead class="text-muted small"><tr><th>Визит</th><th>Клиент</th><th>Комментарий</th><th>Статус</th><th>Изменить статус</th></tr></thead>
+    <tbody>
+    {% for a in appointments %}
+      <tr>
+        <td>{{ a.date }} в {{ a.time }}</td>
+        <td>{{ a.client.fio }}<br><small>{{ a.client.phone }}</small></td>
+        <td class="small text-muted">{{ a.comment or '-' }}</td>
+        <td>
+          {% if a.status == 'new' %}<span class="badge bg-warning text-dark">Ждет</span>
+          {% elif a.status == 'confirmed' %}<span class="badge bg-primary">Подтвержден</span>
+          {% elif a.status == 'in_progress' %}<span class="badge bg-info text-dark">В работе</span>
+          {% elif a.status == 'waiting_parts' %}<span class="badge bg-danger">Ждем запчасти</span>
+          {% elif a.status == 'done' %}<span class="badge bg-success">Выполнен</span>
+          {% else %}<span class="badge bg-secondary">Отменен</span>{% endif %}
+        </td>
+        <td>
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Сменить</button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="{{ url_for('change_appointment_status', appt_id=a.id, new_status='confirmed') }}">Подтвердить</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('change_appointment_status', appt_id=a.id, new_status='in_progress') }}">В работе</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('change_appointment_status', appt_id=a.id, new_status='waiting_parts') }}">Ждем запчасти</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('change_appointment_status', appt_id=a.id, new_status='done') }}">Готово</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="{{ url_for('change_appointment_status', appt_id=a.id, new_status='canceled') }}">Отменить</a></li>
+            </ul>
+          </div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}<p class="text-muted">Записей нет.</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center mt-5">
+  <i class="fa-solid fa-car-side text-orange" style="font-size: 5rem; margin-bottom: 20px;"></i>
+  <h1 class="display-4 fw-bold">Сервис <span class="text-orange">Авто66</span></h1>
+  <p class="lead text-muted">Профессиональный уход за вашим автомобилем. Учет замен, запись онлайн и напоминания.</p>
+  {% if not current_user.is_authenticated %}
+    <div class="mt-4">
+      <a class="btn btn-orange btn-lg px-4 me-2" href="{{ url_for('register') }}">Стать клиентом</a>
+      <a class="btn btn-outline-orange btn-lg px-4" href="{{ url_for('login') }}">Войти в кабинет</a>
+    </div>
+  {% else %}
+    <a class="btn btn-orange btn-lg mt-4 px-5" href="{{ url_for('dashboard') }}">Перейти в гараж</a>
+  {% endif %}
+</div>
+{% endblock %}

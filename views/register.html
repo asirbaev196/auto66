@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4"><i class="fa-solid fa-user-plus text-orange"></i> Регистрация</h2>
+<form method="post" class="row g-3" style="max-width: 600px;">
+  <div class="col-12">
+    <label class="form-label text-muted small mb-0">ФИО</label>
+    <input name="fio" class="form-control" required>
+  </div>
+  <div class="col-12">
+    <label class="form-label text-muted small mb-0">Телефон (логин)</label>
+    <input name="phone" class="form-control" placeholder="+7 999 000-00-00" required>
+  </div>
+  <div class="col-12">
+    <label class="form-label text-muted small mb-0">E-mail (для уведомлений)</label>
+    <input type="email" name="email" class="form-control" placeholder="example@gmail.com">
+  </div>
+  <div class="col-12">
+    <label class="form-label text-muted small mb-0">Пароль</label>
+    <input name="password" type="password" class="form-control" required>
+  </div>
+  
+  <div class="col-12 mt-2">
+    <label class="form-label text-muted small mb-0">Защита от ботов: Сколько будет 2 + 3?</label>
+    <input name="captcha" type="number" class="form-control" required>
+    <input type="hidden" name="captcha_ans" value="5">
+  </div>
+
+  <div class="col-12 mt-4">
+    <button class="btn btn-orange px-4">Зарегистрироваться</button>
+  </div>
+</form>
+{% endblock %}

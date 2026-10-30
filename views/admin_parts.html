@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="fa-solid fa-screwdriver-wrench text-orange"></i> Замены: {{ client.fio }}</h2>
+  <a href="{{ url_for('print_order', user_id=client.id) }}" target="_blank" class="btn btn-outline-secondary"><i class="fa-solid fa-print"></i> Печать заказ-наряда</a>
+</div>
+
+<div class="card card-custom mb-4">
+  <div class="card-header card-header-custom">Заметка о клиенте (скрыта от клиента)</div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('save_note', user_id=client.id) }}" class="d-flex">
+      <input name="admin_note" class="form-control me-2" value="{{ client.admin_note or '' }}" placeholder="Например: Скидка 5%">
+      <button class="btn btn-orange">Сохранить</button>
+    </form>
+  </div>
+</div>
+
+{% for car in cars %}
+<div class="card card-custom mb-4">
+  <div class="card-header card-header-custom"><i class="fa-solid fa-car car-icon"></i> {{ car.brand }} {{ car.model }} <span class="text-muted ms-2">({{ car.plate }})</span></div>
+  <div class="card-body">
+    {% if car.parts %}
+    <table class="table table-sm align-middle">
+      <thead class="text-muted small"><tr><th>Компонент</th><th>Пробег / Дата</th><th>Цены (Запч. / Раб.)</th><th>Статус</th><th></th></tr></thead>
+      <tbody>
+      {% for p in car.parts %}
+        <tr>
+          <td>{{ p.name }}</td>
+          <td>{{ p.last_mileage }} км<br><small>{{ p.last_date.strftime('%d.%m.%Y') }}</small></td>
+          <td class="text-success">{{ p.price_part }} ₽ / {{ p.price_work }} ₽</td>
+          <td>
+            {% if p.is_overdue() %}<span class="badge bg-danger">Просрочено</span>
+            {% else %}<span class="badge bg-success">ОК</span>{% endif %}
+          </td>
+          <td class="text-end"><form method="post" action="{{ url_for('delete_part', part_id=p.id) }}" onsubmit="return confirm('Удалить?');" class="m-0"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="text-secondary mb-0">Замен нет.</p>{% endif %}
+  </div>
+</div>
+{% endfor %}
+
+<div class="card card-custom mt-5">
+  <div class="card-header card-header-custom"><i class="fa-solid fa-plus"></i> Добавить замену</div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('add_part', user_id=client.id) }}" class="row g-2 align-items-end">
+      <div class="col-md-2"><label class="form-label text-muted small mb-0">Авто</label>
+        <select name="car_id" class="form-select form-select-sm" required>
+          <option value="" disabled selected>Машина...</option>
+          {% for c in cars %}<option value="{{ c.id }}">{{ c.brand }} {{ c.model }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><label class="form-label text-muted small mb-0">Компонент</label>
+        <select name="name" class="form-select form-select-sm" required>
+          <option value="" disabled selected>Деталь...</option>
+          {% for comp in components %}<option value="{{ comp.name }}">{{ comp.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><label class="form-label text-muted small mb-0">Пробег</label><input name="last_mileage" type="number" class="form-control form-control-sm" required></div>
+      <div class="col-md-2"><label class="form-label text-muted small mb-0">Дата</label><input name="last_date" type="date" class="form-control form-control-sm" required></div>
+      <div class="col-md-1"><label class="form-label text-muted small mb-0">Инт. км</label><input name="interval_km" type="number" class="form-control form-control-sm" value="10000" required></div>
+      <div class="col-md-1"><label class="form-label text-muted small mb-0">Запч. (₽)</label><input name="price_part" type="number" class="form-control form-control-sm" value="0"></div>
+      <div class="col-md-1"><label class="form-label text-muted small mb-0">Раб. (₽)</label><input name="price_work" type="number" class="form-control form-control-sm" value="0"></div>
+      <div class="col-md-1"><button class="btn btn-orange btn-sm w-100"><i class="fa-solid fa-check"></i></button></div>
+    </form>
+  </div>
+</div>
+<div class="mt-4"><a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm">Назад</a></div>
+{% endblock %}
+
+
+
+

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2><i class="fa-solid fa-envelope text-orange"></i> Настройки почты</h2>
+  <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm">Назад</a>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card card-custom">
+      <div class="card-header card-header-custom">Отправитель уведомлений</div>
+      <div class="card-body">
+        <p class="text-muted small">С этого адреса клиенты будут получать письма о заменах и записях.</p>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label text-muted small mb-0">Email (Gmail)</label>
+            <input name="smtp_user" type="email" class="form-control" value="{{ settings.smtp_user }}" required>
+          </div>
+          <div class="mb-4">
+            <label class="form-label text-muted small mb-0">Пароль приложения (16 символов)</label>
+            <input name="smtp_password" type="password" class="form-control" value="{{ settings.smtp_password }}" required>
+            <small class="text-muted">Это не обычный пароль от почты, а код, который выдается в настройках безопасности Google.</small>
+          </div>
+          <button class="btn btn-orange px-4">Сохранить настройки</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card card-custom bg-body-tertiary">
+      <div class="card-body">
+        <h6 class="text-orange"><i class="fa-solid fa-circle-info"></i> Как получить пароль?</h6>
+        <ol class="text-muted small ps-3 mb-0">
+          <li>Зайдите в аккаунт Google.</li>
+          <li>Перейдите в раздел «Безопасность».</li>
+          <li>Включите двухэтапную аутентификацию.</li>
+          <li>В поиске настроек найдите «Пароли приложений».</li>
+          <li>Создайте пароль и скопируйте 16 символов.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
