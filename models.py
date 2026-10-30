@@ -5,17 +5,11 @@ from datetime import date, datetime
 db = SQLAlchemy()
 
 class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    fio = db.Column(db.String(120), nullable=False)
-    phone = db.Column(db.String(20), unique=True, nullable=False)
-    password_hash = db.Column(db.String(200), nullable=False)
-    # Роли: client (пользователь), mechanic (механик), admin (администратор)
-    role = db.Column(db.String(20), default='client') 
-    email = db.Column(db.String(120)) 
-    admin_note = db.Column(db.String(255))
-    
+    # ... остальные поля ...
     cars = db.relationship('Car', backref='owner', lazy=True, cascade="all, delete-orphan")
-    appointments = db.relationship('Appointment', backref='client', lazy=True, cascade="all, delete-orphan")
+    
+    # ЯВНО УКАЗЫВАЕМ, ЧТО СВЯЗЬ ИДЕТ ЧЕРЕЗ user_id (КЛИЕНТА), А НЕ ЧЕРЕЗ mechanic_id
+    appointments = db.relationship('Appointment', foreign_keys='Appointment.user_id', backref='client', lazy=True, cascade="all, delete-orphan")
 
 class Car(db.Model):
     id = db.Column(db.Integer, primary_key=True)
