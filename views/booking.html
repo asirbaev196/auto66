@@ -2,6 +2,7 @@
 {% block content %}
 <h2 class="mb-4"><i class="fa-regular fa-calendar-plus text-orange"></i> Запись в сервис</h2>
 <p class="text-muted">Выберите удобную дату и время.</p>
+
 {% if slots %}
 <div class="row g-3 mt-2">
   {% for s in slots %}
@@ -9,11 +10,15 @@
       <form method="post" class="card card-custom p-3">
         <input type="hidden" name="date" value="{{ s.date }}">
         <input type="hidden" name="time" value="{{ s.time }}">
+        
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="fw-bold"><i class="fa-regular fa-calendar text-orange me-1"></i> {{ s.date }}</span>
           <span class="badge bg-orange">{{ s.time }}</span>
         </div>
-        <textarea name="comment" class="form-control form-control-sm mb-2" rows="2" placeholder="Опишите проблему"></textarea>
+        
+        <!-- Вот здесь добавлено ограничение maxlength="250" -->
+        <textarea name="comment" class="form-control form-control-sm mb-2" rows="2" placeholder="Опишите проблему (макс. 250 символов)" maxlength="250"></textarea>
+        
         <button class="btn btn-outline-orange btn-sm w-100">Записаться</button>
       </form>
     </div>
