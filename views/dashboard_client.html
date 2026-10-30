@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 <h2 class="mb-4"><i class="fa-solid fa-warehouse text-orange"></i> Мой гараж</h2>
+<div class="mb-4">
+  <a href="{{ url_for('export_my_report') }}" class="btn btn-success"><i class="fa-solid fa-file-excel"></i> Скачать отчет по машинам (CSV)</a>
+</div>
 
 <div class="card card-custom mb-4">
   <div class="card-header card-header-custom"><i class="fa-solid fa-envelope text-orange"></i> Уведомления</div>
